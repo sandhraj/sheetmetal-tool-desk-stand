@@ -1,0 +1,696 @@
+<title>Tool Stand Drawing Set</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a drafting-room workbench. Sticky sheet tabs on top, the drawing sheet as the hero, a control rail beside it. Paper stays white in both themes. */
+:root{
+  --bg:#eef0f1; --panel:#ffffff; --ink:#1b2126; --muted:#5d6871; --line:#d3d8dc;
+  --accent:#c98a12; --accent-ink:#1b2126; --ok:#1f7a4d; --warn:#b3261e; --chip:#e5e9ec;
+  --paper:#ffffff; --pen:#111417; --dim:#1d4f91; --bend:#c62828; --tag:#a2531c;
+  --f-ui:"Barlow", "Segoe UI", system-ui, sans-serif;
+  --f-draw:"Barlow Condensed", "Arial Narrow", sans-serif;
+  --f-num:"JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#15191c; --panel:#1e2428; --ink:#e7eaec; --muted:#9aa5ad; --line:#2f373d;
+  --accent:#e2a531; --accent-ink:#15191c; --ok:#4cc38a; --warn:#ff7b72; --chip:#283036; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#15191c; --panel:#1e2428; --ink:#e7eaec; --muted:#9aa5ad; --line:#2f373d;
+  --accent:#e2a531; --accent-ink:#15191c; --ok:#4cc38a; --warn:#ff7b72; --chip:#283036; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-ui);font-size:15px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 32px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:14px 10px;border-bottom:1px solid var(--line)}
+.brand{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px}
+.brand h1{font-family:var(--f-draw);font-weight:600;font-size:26px;letter-spacing:.02em;margin:0;text-wrap:balance}
+.brand .meta{font-family:var(--f-num);font-size:12px;color:var(--muted)}
+nav.tabs{display:flex;gap:6px;margin-top:10px;overflow-x:auto;scrollbar-width:thin}
+nav.tabs button{flex:0 0 auto;font:500 14px var(--f-ui);border:1px solid var(--line);background:var(--panel);color:var(--ink);
+  padding:7px 12px;border-radius:4px;cursor:pointer;display:flex;gap:8px;align-items:baseline}
+nav.tabs button .no{font-family:var(--f-num);font-size:11px;color:var(--muted)}
+nav.tabs button[aria-selected="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+nav.tabs button[aria-selected="true"] .no{color:var(--accent)}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.work{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px;margin-top:16px;align-items:start}
+@media (max-width:900px){.work{grid-template-columns:minmax(0,1fr)}}
+.stage{min-width:0;background:var(--panel);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.stagebar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;padding:8px 10px;border-bottom:1px solid var(--line)}
+.stagebar .title{font-family:var(--f-draw);font-size:17px;font-weight:500}
+.tools{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.btn{font:500 13px var(--f-ui);border:1px solid var(--line);background:var(--chip);color:var(--ink);padding:5px 10px;border-radius:4px;cursor:pointer}
+.btn:hover{border-color:var(--accent)}
+.tog{display:flex;align-items:center;gap:5px;font-size:13px;color:var(--muted);cursor:pointer}
+.view{position:relative;aspect-ratio:420/297;max-width:100%;background:#8a949b;touch-action:none;cursor:grab}
+.view.dragging{cursor:grabbing}
+.view svg.sheet{position:absolute;inset:0;width:100%;height:100%;display:block}
+#v3d{position:relative;aspect-ratio:16/10;max-width:100%;touch-action:none;background:var(--panel)}
+#v3d canvas{display:block;width:100%!important;height:100%!important}
+.hint{font-size:12px;color:var(--muted);padding:6px 10px;border-top:1px solid var(--line)}
+aside.rail{display:flex;flex-direction:column;gap:12px;min-width:0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:12px 14px}
+.card h2{font-family:var(--f-draw);font-weight:600;font-size:16px;letter-spacing:.04em;text-transform:uppercase;margin:0 0 8px;color:var(--muted)}
+.ctl{display:grid;grid-template-columns:1fr auto;gap:2px 8px;margin-bottom:10px}
+.ctl label{font-size:14px}
+.ctl output{font-family:var(--f-num);font-size:13px;font-variant-numeric:tabular-nums}
+.ctl input{grid-column:1/-1;width:100%;accent-color:var(--accent)}
+.presets{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.checks{display:flex;flex-direction:column;gap:7px}
+.chk{display:grid;grid-template-columns:auto 1fr;gap:2px 8px;align-items:start;font-size:13.5px}
+.pill{font:600 11px var(--f-num);padding:2px 6px;border-radius:3px;letter-spacing:.04em;color:#fff;margin-top:2px}
+.pill.ok{background:var(--ok)} .pill.bad{background:var(--warn)}
+.chk .v{font-family:var(--f-num);font-size:12px;color:var(--muted);grid-column:2}
+.small{font-size:13px;color:var(--muted);margin:0}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:3px 10px;font-size:13.5px}
+.kv dt{color:var(--muted)} .kv dd{margin:0;font-family:var(--f-num);font-size:12.5px;text-align:right;font-variant-numeric:tabular-nums}
+/* drawing paper styles */
+svg.sheet{font-family:var(--f-draw)}
+svg.sheet .paper{fill:var(--paper)}
+svg.sheet .vis{fill:none;stroke:var(--pen);stroke-width:.45;stroke-linejoin:round}
+svg.sheet .solid{fill:#e9ecee;stroke:var(--pen);stroke-width:.4;fill-rule:evenodd}
+svg.sheet .thin{fill:none;stroke:var(--pen);stroke-width:.18}
+svg.sheet .hid{fill:none;stroke:var(--pen);stroke-width:.2;stroke-dasharray:1.2 .8}
+svg.sheet .ph{fill:none;stroke:#7b858c;stroke-width:.25;stroke-dasharray:3 .8 .5 .8}
+svg.sheet .cl{fill:none;stroke:#7b858c;stroke-width:.15;stroke-dasharray:3 .7 .6 .7}
+svg.sheet .bend{fill:none;stroke:var(--bend);stroke-width:.3;stroke-dasharray:2 1}
+svg.sheet .dim line,svg.sheet .dim path.l{stroke:var(--dim);stroke-width:.18;fill:none}
+svg.sheet .dim path.a{fill:var(--dim);stroke:none}
+svg.sheet .dim text{fill:var(--dim);font-size:3px;font-family:var(--f-draw)}
+svg.sheet text{fill:var(--pen)}
+svg.sheet .tag{fill:var(--tag);font-size:2.6px;font-weight:600;font-family:var(--f-num)}
+svg.sheet .bendtxt{fill:var(--bend);font-size:2.6px}
+svg.sheet .lbl{font-size:3.6px;font-weight:600;letter-spacing:.06em}
+svg.sheet .note{font-size:2.9px}
+svg.sheet .noteh{font-size:3.3px;font-weight:600;letter-spacing:.05em}
+svg.sheet .tb{fill:none;stroke:var(--pen);stroke-width:.35}
+svg.sheet .tbs{font-size:2.2px;fill:#5d6871}
+svg.sheet .tbv{font-size:3.4px;font-weight:500}
+svg.sheet .tbt{font-size:5px;font-weight:600}
+svg.sheet .num{font-family:var(--f-num)}
+svg.sheet .ball circle{fill:#fff;stroke:var(--pen);stroke-width:.3}
+svg.sheet .ball text{font-size:3.2px;font-weight:600;text-anchor:middle;dominant-baseline:central}
+svg.sheet .ball line{stroke:var(--pen);stroke-width:.2}
+svg.sheet .tool{fill:none;stroke:#8d969c;stroke-width:.35}
+svg.sheet .bad{stroke:var(--bend)!important}
+svg.sheet .row line{stroke:var(--pen);stroke-width:.15}
+svg.sheet.hide-dims .dim, svg.sheet.hide-tags .tag, svg.sheet.hide-cl .cl{display:none}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<header class="top">
+  <div class="brand">
+    <h1>Screwdriver &amp; Tool Desk Stand</h1>
+    <span class="meta">DWG TS-000 · REV L · 1.5 mm MS + HDG · 2026-10-25 · units mm · 1st-angle projection</span>
+  </div>
+  <nav class="tabs" role="tablist" id="tabs"></nav>
+</header>
+
+<div class="work">
+  <section class="stage" aria-live="polite">
+    <div class="stagebar">
+      <span class="title" id="stageTitle"></span>
+      <div class="tools" id="sheetTools">
+        <button class="btn" id="zin" type="button" aria-label="Zoom in">+</button>
+        <button class="btn" id="zout" type="button" aria-label="Zoom out">−</button>
+        <button class="btn" id="zfit" type="button">Fit</button>
+        <label class="tog"><input type="checkbox" id="lDims" checked> Dims</label>
+        <label class="tog"><input type="checkbox" id="lTags" checked> Hole tags</label>
+        <label class="tog"><input type="checkbox" id="lCl" checked> Centre lines</label>
+      </div>
+      <div class="tools" id="v3dTools" hidden>
+        <label class="tog"><input type="checkbox" id="tTools" checked> Sample tools</label>
+        <label class="tog"><input type="checkbox" id="tExplode"> Exploded</label>
+        <button class="btn" id="vIso" type="button">Iso</button>
+        <button class="btn" id="vSide" type="button">Side</button>
+        <button class="btn" id="vFront" type="button">Front</button>
+      </div>
+    </div>
+    <div class="view" id="view"></div>
+    <div id="v3d" hidden></div>
+    <div class="hint" id="hint">Scroll or pinch to zoom, drag to pan. The DXF governs all cut geometry; do not scale prints.</div>
+  </section>
+
+  <aside class="rail">
+    <div class="card">
+      <h2>Stand setting</h2>
+      <div class="ctl"><label for="sAlpha">Arm lean back</label><output id="oAlpha"></output><input type="range" id="sAlpha" min="-15" max="45" step="1"></div>
+      <div class="ctl" hidden><label for="sS">Tray pivot</label><output id="oS"></output><input type="range" id="sS" min="120" max="120" step="1"></div>
+      <div class="ctl"><label for="sTh">Tray tilt (front down)</label><output id="oTh"></output><input type="range" id="sTh" min="0" max="60" step="1"></div>
+      <div class="ctl"><label for="sSh">Tool shank below lower plate</label><output id="oSh"></output><input type="range" id="sSh" min="60" max="170" step="5"></div>
+      <div class="presets" id="presets"></div>
+    </div>
+    <div class="card">
+      <h2>Checks at this setting</h2>
+      <div class="checks" id="checks"></div>
+    </div>
+    <div class="card">
+      <h2>Cut summary</h2>
+      <dl class="kv" id="cutsum"></dl>
+    </div>
+  </aside>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+const GEO = /*GEO*/null;
+const SOL = /*SOL*/null;
+const P = GEO.params;
+const yc = P.D/2;
+const state = {alpha:0, s:190, theta:30, shank:130, sheet:"s3d"};
+const R = Math.PI/180;
+const FRICTION_CAP = 5.0; // N·m per joint at ~2 kN clamp (see notes)
+
+/* ---------------- kinematics (mirrors the Python checks) ---------------- */
+const kg = {top:GEO.TOP_PLATE.kg, low:GEO.LOWER_PLATE.kg, base:GEO.BASE.kg, arm:GEO.ARM.kg, so:0.14, tools:1.5};
+function pose(alpha=state.alpha, s=state.s, theta=state.theta){
+  const a=alpha*R, t=theta*R;
+  const p1=[P.YB,P.H1], p2=[P.YB+s*Math.sin(a), P.H1+s*Math.cos(a)];
+  const G=(y,h)=>{const dy=y-yc, dz=-(h-P.H2);return [p2[0]+dy*Math.cos(t)-dz*Math.sin(t), p2[1]+dy*Math.sin(t)+dz*Math.cos(t)]};
+  return {p1,p2,t,a,G};
+}
+function evaluate(){
+  const {p1,p2,t,G}=pose();
+  const tips=[10,yc,P.D-10].map(y=>G(y,P.T)[1]-state.shank*Math.cos(t));
+  const tip=Math.min(...tips);
+  const plateLow=Math.min(G(0,P.T)[1],G(P.D,P.T)[1]);
+  const parts=[[kg.top,G(yc,-P.GAP+1)],[kg.low,G(yc,1)],[kg.so,G(yc,-P.GAP/2)],[kg.tools,G(yc,-P.GAP-30)]];
+  const mt=parts.reduce((s,q)=>s+q[0],0), cgt=parts.reduce((s,q)=>s+q[0]*q[1][0],0)/mt;
+  const armMid=(p1[0]+p2[0])/2;
+  const cg=(cgt*mt+2*kg.arm*armMid+kg.base*P.BASE_D/2)/(mt+2*kg.arm+kg.base);
+  const g=9.81;
+  const tP2=mt*g*Math.abs(cgt-p2[0])/1000/2;
+  const tP1=(mt*g*Math.abs(cgt-p1[0])+2*kg.arm*g*Math.abs(armMid-p1[0]))/1000/2;
+  const front=G(0,-P.GAP);
+  return {tip,plateLow,cg,tP1,tP2,frontH:front[1],frontY:front[0],mt};
+}
+
+/* ---------------- svg helpers (paper mm) ---------------- */
+const f1=v=>(Math.round(v*10)/10).toString();
+const fx=v=>{const r=Math.round(v*10)/10;return Number.isInteger(r)?r.toFixed(0):r.toFixed(1)};
+function view(ox,oy,k,flipY=true){return {p:(x,y)=>[ox+x*k, flipY?oy-y*k:oy+y*k], k};}
+function ringD(r,V){return r.map((q,i)=>{const [x,y]=V.p(q[0],q[1]);return (i?"L":"M")+x.toFixed(2)+" "+y.toFixed(2)}).join("")+"Z";}
+function arrow(x,y,ang){const L=2.4,W=.75,c=Math.cos(ang),s=Math.sin(ang);
+  return `<path class="a" d="M${x} ${y}L${x-L*c+W*s} ${y-L*s-W*c}L${x-L*c-W*s} ${y-L*s+W*c}Z"/>`;}
+function dimH(x1,y1,x2,y2,yd,txt){ // horizontal distance, dim line at paper y = yd
+  const s=Math.sign(yd-y1)||1, s2=Math.sign(yd-y2)||1;
+  const xa=Math.min(x1,x2), xb=Math.max(x1,x2), w=xb-xa;
+  const out=w<9;
+  let o=`<g class="dim"><line x1="${x1}" y1="${y1+s*1}" x2="${x1}" y2="${yd+s*1.5}"/><line x1="${x2}" y1="${y2+s2*1}" x2="${x2}" y2="${yd+s2*1.5}"/>`;
+  if(!out){o+=`<line x1="${xa}" y1="${yd}" x2="${xb}" y2="${yd}"/>${arrow(xa,yd,Math.PI)}${arrow(xb,yd,0)}<text x="${(xa+xb)/2}" y="${yd-0.9}" text-anchor="middle">${txt}</text>`;}
+  else{o+=`<line x1="${xa-6}" y1="${yd}" x2="${xb+6}" y2="${yd}"/>${arrow(xa,yd,0)}${arrow(xb,yd,Math.PI)}<text x="${xb+7}" y="${yd+1}" >${txt}</text>`;}
+  return o+"</g>";
+}
+function dimV(x1,y1,x2,y2,xd,txt){
+  const s=Math.sign(xd-x1)||1, s2=Math.sign(xd-x2)||1;
+  const ya=Math.min(y1,y2), yb=Math.max(y1,y2), h=yb-ya;
+  let o=`<g class="dim"><line x1="${x1+s*1}" y1="${y1}" x2="${xd+s*1.5}" y2="${y1}"/><line x1="${x2+s2*1}" y1="${y2}" x2="${xd+s2*1.5}" y2="${y2}"/>`;
+  if(h>=9){o+=`<line x1="${xd}" y1="${ya}" x2="${xd}" y2="${yb}"/>${arrow(xd,ya,-Math.PI/2)}${arrow(xd,yb,Math.PI/2)}<text transform="translate(${xd-0.9} ${(ya+yb)/2}) rotate(-90)" text-anchor="middle">${txt}</text>`;}
+  else{o+=`<line x1="${xd}" y1="${ya-6}" x2="${xd}" y2="${yb+6}"/>${arrow(xd,ya,Math.PI/2)}${arrow(xd,yb,-Math.PI/2)}<text transform="translate(${xd-0.9} ${yb+7}) rotate(-90)" text-anchor="end">${txt}</text>`;}
+  return o+"</g>";
+}
+function leader(x,y,tx,ty,txt,anchor){const ang=Math.atan2(y-ty,x-tx);anchor=anchor||(tx<x?"end":"start");
+  const lines=txt.split("\n");
+  return `<g class="dim"><path class="l" d="M${tx} ${ty}L${x} ${y}"/>${arrow(x,y,ang)}<line x1="${tx}" y1="${ty}" x2="${tx+(anchor==="end"?-3:3)}" y2="${ty}"/>`+
+    lines.map((l,i)=>`<text x="${tx+(anchor==="end"?-3.6:3.6)}" y="${ty+1+i*3.6}" text-anchor="${anchor}">${l}</text>`).join("")+`</g>`;}
+function cmark(x,y,r){const e=r+1.6;return `<path class="cl" d="M${x-e} ${y}H${x+e}M${x} ${y-e}V${y+e}"/>`;}
+function balloon(n,x,y,tx,ty){return `<g class="ball"><line x1="${x}" y1="${y}" x2="${tx}" y2="${ty}"/><circle cx="${x}" cy="${y}" r="0.5" style="fill:var(--pen)"/><circle cx="${tx}" cy="${ty}" r="3.2"/><text x="${tx}" y="${ty}">${n}</text></g>`;}
+function txt(x,y,s,cls="note",anchor="start"){return `<text class="${cls}" x="${x}" y="${y}" text-anchor="${anchor}">${s}</text>`;}
+function para(x,y,lines,cls="note",lh=3.9){return lines.map((l,i)=>txt(x,y+i*lh,l,cls)).join("");}
+function table(x,y,cols,rows,rh=4.4,head=true){
+  const W=cols.reduce((s,c)=>s+c.w,0);let o=`<g class="row">`;
+  const n=rows.length+(head?1:0);
+  o+=`<rect x="${x}" y="${y}" width="${W}" height="${n*rh}" class="thin" style="stroke-width:.3"/>`;
+  for(let i=1;i<n;i++)o+=`<line x1="${x}" y1="${y+i*rh}" x2="${x+W}" y2="${y+i*rh}"/>`;
+  let cx=x;cols.forEach((c,j)=>{if(j)o+=`<line x1="${cx}" y1="${y}" x2="${cx}" y2="${y+n*rh}"/>`;cx+=c.w;});
+  const put=(r,ri,cls)=>{let cx=x;r.forEach((v,j)=>{const c=cols[j];const tx=c.a==="r"?cx+c.w-1.2:cx+1.2;
+      o+=`<text class="${cls}${c.mono?" num":""}" x="${tx}" y="${y+ri*rh+rh*0.7}" text-anchor="${c.a==="r"?"end":"start"}" style="font-size:${c.fs||2.8}px">${v}</text>`;cx+=c.w;});};
+  if(head)put(cols.map(c=>c.h),0,"noteh");
+  rows.forEach((r,i)=>put(r,i+(head?1:0),"note"));
+  return o+"</g>";
+}
+function firstAngle(x,y){ // ISO first-angle projection symbol
+  return `<g><path class="vis" d="M${x} ${y-2}L${x} ${y+2}L${x+6} ${y+3.2}L${x+6} ${y-3.2}Z"/><path class="cl" d="M${x-1.5} ${y}H${x+21}"/>`+
+    `<circle class="vis" cx="${x+15}" cy="${y}" r="3.2"/><circle class="vis" cx="${x+15}" cy="${y}" r="2"/></g>`;}
+function frame(no, title, part, scale, qty, matl, sheetN){
+  let o=`<rect class="paper" x="0" y="0" width="420" height="297"/><rect class="tb" x="20" y="10" width="390" height="277" style="stroke-width:.6"/>`;
+  for(let i=1;i<8;i++){const x=20+i*390/8;o+=`<line class="thin" x1="${x}" y1="10" x2="${x}" y2="13"/><line class="thin" x1="${x}" y1="284" x2="${x}" y2="287"/>`}
+  const X=250,Y=247,W=160,H=40;
+  o+=`<rect class="tb" x="${X}" y="${Y}" width="${W}" height="${H}"/>`;
+  const hl=(y)=>`<line class="tb" x1="${X}" y1="${y}" x2="${X+W}" y2="${y}"/>`;
+  o+=hl(Y+12)+hl(Y+20)+hl(Y+28);
+  o+=`<line class="tb" x1="${X+100}" y1="${Y}" x2="${X+100}" y2="${Y+12}"/>`;
+  [40,80,120].forEach(d=>o+=`<line class="tb" x1="${X+d}" y1="${Y+12}" x2="${X+d}" y2="${Y+H}"/>`);
+  const cell=(x,y,l,v,cls="tbv")=>`<text class="tbs" x="${x+1.2}" y="${y+2.6}">${l}</text><text class="${cls}" x="${x+1.2}" y="${y+6.8}">${v}</text>`;
+  o+=`<text class="tbs" x="${X+1.2}" y="${Y+2.8}">TITLE</text><text class="tbt" x="${X+1.2}" y="${Y+9.6}">${title}</text>`;
+  o+=cell(X+100,Y,"DRAWING NO.",`TS-${no}  REV L`)+`<text class="tbs" x="${X+101.2}" y="${Y+11}">${part}</text>`;
+  o+=cell(X,Y+12,"MATERIAL",matl,"tbv")+cell(X+40,Y+12,"FINISH","HDG after forming")+cell(X+80,Y+12,"QTY / SET",qty)+cell(X+120,Y+12,"SCALE",scale);
+  o+=cell(X,Y+20,"GEN. TOL.","ISO 2768-m")+cell(X+40,Y+20,"UNITS / PROJ.","mm  ·  1st angle")+cell(X+80,Y+20,"DATE","2026-10-25")+cell(X+120,Y+20,"SHEET",`${sheetN} of 5`);
+  o+=cell(X,Y+28,"DESIGN FOR","Sandheep Rajendran")+cell(X+40,Y+28,"DRAWN","Claude")+cell(X+80,Y+28,"PROJECT","Tool desk stand")+firstAngle(X+124,Y+34.5);
+  return o;
+}
+
+/* ---------------- part views ---------------- */
+function partSVG(name,V,opt={}){
+  const g=GEO[name];let o="";
+  const outline=g.outline.map(r=>ringD(r,V)).join("");
+  const feats=g.feats.map(f=>f.t==="c"?null:f.r.map(r=>ringD(r,V)).join("")).filter(Boolean).join("");
+  o+=`<path class="vis" d="${outline}${feats}" style="fill:#fafbfb;fill-rule:evenodd"/>`;
+  g.feats.forEach(f=>{if(f.t==="c"){const [x,y]=V.p(f.x,f.y);o+=`<circle class="vis" cx="${x}" cy="${y}" r="${f.d/2*V.k}"/>`+cmark(x,y,f.d/2*V.k);}});
+  (g.bends||[]).forEach(b=>{const [x0,y0]=V.p(b[0],b[1]),[x1,y1]=V.p(b[0],b[2]);
+    o+=`<line class="bend" x1="${x0}" y1="${y0-2}" x2="${x1}" y2="${y1+2}"/><text class="bendtxt" transform="translate(${x0+(b[0]>0?-1.4:2.6)} ${(y0+y1)/2}) rotate(-90)" text-anchor="middle">${b[3]}</text>`;});
+  return o;
+}
+function tagsFor(V,lower){let o="";
+  GEO.pattern.forEach(p=>{if(lower&&p.top)return;const [x,y]=V.p(p.x,p.y);o+=`<text class="tag" x="${x}" y="${y+0.9}" text-anchor="middle">${p.g[0]}</text>`});
+  if(lower)[1,-1].forEach(s=>{const [x,y]=V.p(s*(P.XL-P.H2/2-8),yc+12);o+=`<text class="tag" x="${x}" y="${y}" text-anchor="middle">K</text>`});
+  return o;}
+function groups(){const m=new Map();
+  GEO.pattern.forEach(p=>{const k=p.g;if(!m.has(k))m.set(k,{g:k,items:[]});m.get(k).items.push(p)});return [...m.values()];}
+function holeTable(x,y){
+  const cols=[{h:"TAG",w:9},{h:"SIZE",w:36,fs:2.4},{h:"QTY",w:8,a:"r"},{h:"X FROM ℄ (mm)",w:64,mono:1,fs:2.3},{h:"Y FRONT (mm)",w:28,mono:1,fs:2.3},{h:"FOR",w:60,fs:2.4}];
+  const rows=groups().map(gr=>{const p=gr.items[0];
+    const ux=[...new Set(gr.items.map(i=>i.x))].sort((a,b)=>a-b);
+    const even=ux.length>6&&ux.every((v,i)=>!i||Math.abs((v-ux[i-1])-(ux[1]-ux[0]))<0.01);
+    const xs=even?`${fx(ux[0])} to ${fx(ux[ux.length-1])} @ ${fx(ux[1]-ux[0])}`:ux.map(fx).join(", "), ys=[...new Set(gr.items.map(i=>fx(i.y)))].join(", ");
+    const sz=q=>q.k==="c"?`Ø${fx(q.w)} THRU`:(q.r*2>=Math.min(q.w,q.h)-0.01?`${fx(q.w)}×${fx(q.h)} SLOT`:`${fx(q.w)}×${fx(q.h)} R${fx(q.r)}`);
+    const sizes=[...new Set(gr.items.map(sz))];const size=sizes.length>1?sizes.map(z=>z.replace(" SLOT","")).join(" / ")+" SLOTS":sizes[0];
+    return [p.g[0],size,gr.items.length,xs,ys,p.g.split(" - ")[1]+(p.top?" · TS-02 only":"")];});
+  rows.push(["S","Ø7 THRU",4,`±${fx(P.SO[0])}`,`${fx(P.SO[1])}, ${fx(P.D-P.SO[1])}`,"standoff M6"]);
+  return table(x,y,cols,rows,4.3);
+}
+
+/* ---------------- sheets ---------------- */
+function sheetTop(){
+  const k=0.72, ox=142, oy=172; const V=view(ox,oy,k);
+  let o=frame("02","TOP PLATE","PART 1","1:1.4 (0.72)","1","1.5 mm MS (CRCA)",2);
+  o+=txt(28,20,`PLAN VIEW · ${GEO.pattern.length} TOOL SLOTS + 4 STANDOFF HOLES`,"lbl");
+  o+=partSVG("TOP_PLATE",V)+tagsFor(V);
+  const [L,B]=V.p(-P.W_TOP/2,0),[Rr,Tt]=V.p(P.W_TOP/2,P.D);
+  o+=dimH(L,Tt,Rr,Tt,Tt-12,`${fx(P.W_TOP)}`)+dimV(L,B,L,Tt,L-7,`${fx(P.D)}`);
+  const [sx,sy]=V.p(P.SO[0],P.D-P.SO[1]),[sx2]=V.p(-P.SO[0],0);
+  o+=dimH(sx2,Tt,sx,Tt,Tt-6,`${fx(2*P.SO[0])} (S holes)`)+dimV(L,V.p(0,P.D-P.SO[1])[1],L,Tt,L-3,`${fx(P.SO[1])}`);
+  const [c0x]=V.p(0,0);o+=`<path class="cl" d="M${c0x} ${Tt-3}V${B+5}"/>`+txt(c0x+1,B+4.5,"℄ = X0","note");
+  o+=`<path class="thin" d="M${L-3} ${B}H${L+8}" style="stroke-width:.4"/>`+txt(L-3,B+4.5,"FRONT EDGE = Y0","note");
+  // one callout per unique hole type
+  const sz=q=>q.k==="c"?`Ø${fx(q.w)} THRU`:(q.r*2>=Math.min(q.w,q.h)-0.01?`${fx(q.w)}×${fx(q.h)} SLOT`:`${fx(q.w)}×${fx(q.h)} R${fx(q.r)}`);
+  const calls=groups().map(gr=>{const rep=gr.items.reduce((m,i)=>i.x+i.y*0.01>m.x+m.y*0.01?i:m);
+    const sizes=[...new Set(gr.items.map(sz))];
+    const size=sizes.length>1?`${sizes[0].replace(" SLOT","")}…${sizes[sizes.length-1]}`:sizes[0];
+    return {rep,tag:gr.g[0],head:`${gr.g[0]}  ·  ${gr.items.length}× ${size}`,tool:gr.g.split(" - ")[1]};});
+  calls.push({rep:{x:P.SO[0],y:P.SO[1],k:"c",w:7,h:7},tag:"S",head:"S  ·  4× Ø7 THRU",tool:"M6 standoff bolts"});
+  calls.forEach(c=>{const [x,y]=V.p(c.rep.x,c.rep.y);c.px=x;c.py=y;});
+  calls.sort((a,b)=>a.py-b.py);
+  const top=30, bot=186, step=(bot-top)/(calls.length-1), TX=Rr+22;
+  o+=txt(TX-2,25,"HOLE CALLOUTS (one per type)","noteh");
+  calls.forEach((c,i)=>{const ty=top+4+i*step;
+    const rr=(c.rep.k==="c"?c.rep.w/2:Math.min(c.rep.w,c.rep.h)/2)*k;
+    const ang=Math.atan2(ty-c.py,TX-c.px);const hx=c.px+Math.cos(ang)*rr, hy=c.py+Math.sin(ang)*rr;
+    o+=`<g class="dim"><path class="l" d="M${TX} ${ty}L${hx} ${hy}"/>${arrow(hx,hy,Math.atan2(hy-ty,hx-TX))}<line x1="${TX}" y1="${ty}" x2="${TX+3}" y2="${ty}"/>`+
+       `<text x="${TX+3.8}" y="${ty+0.6}" style="font-weight:600">${c.head}</text><text x="${TX+3.8}" y="${ty+4.2}" style="font-size:2.7px">${c.tool}</text></g>`;});
+  // edge view
+  const ey=oy+12; o+=`<rect class="vis" x="${L}" y="${ey}" width="${Rr-L}" height="${P.T*k}" style="fill:#d9dee1"/>`+txt(L,ey+6,"EDGE VIEW","noteh")+dimV(Rr,ey,Rr,ey+P.T*k,Rr+5,`${fx(P.T)}`);
+  o+=txt(28,203,"HOLE TABLE (TS-03: same centres, holes ≈8 % smaller, see TS-03)","noteh")+holeTable(28,205);
+  o+=txt(262,202,"NOTES","noteh")+para(262,207,["1. Cut from DXF TS-02 (layer CUT). Do not scale.","2. Deburr all edges and hole edges. Plate stays flat.","3. Flatness 1 mm over 300 after HDG.","4. Holes allow for zinc build-up (≈0.1 mm/face).","5. Tags are for reference only: do not engrave."],"note",3.7);
+  return o;
+}
+function sheetLower(){
+  const k=0.8, ox=150, oy=172; const V=view(ox,oy,k);
+  let o=frame("03","LOWER PLATE","PART 2","1:1.25 (0.8)","1","1.5 mm MS (CRCA)",3);
+  o+=txt(28,20,"FLAT PATTERN · PIVOT EARS LANCED INSIDE THE OUTLINE","lbl");
+  o+=partSVG("LOWER_PLATE",V)+tagsFor(V,true);
+  const [L,B]=V.p(-P.W_LOW/2,0),[Rr,Tt]=V.p(P.W_LOW/2,P.D),[cx]=V.p(0,0);
+  o+=dimH(L,Tt,Rr,Tt,Tt-7,`${fx(P.W_LOW)}`)+dimV(Rr,B,Rr,Tt,Rr+9,`${fx(P.D)}`);
+  const [bx,by]=V.p(P.XL,yc-P.EAR_W/2),[hx,hy]=V.p(P.XL-P.H2,yc),[hxl]=V.p(-(P.XL-P.H2),yc);
+  o+=dimH(cx,B,bx,by,B+7,`${fx(P.XL)} bend line`)+dimH(cx,B,hx,hy,B+13,`${fx(P.XL-P.H2)}`);
+  o+=dimV(L,B,hxl,hy,L-6,`${fx(yc)}`);
+  o+=leader(hx,hy,hx-26,Tt+10,"2× Ø7 THRU tray pivot","end");
+  o+=`<path class="cl" d="M${cx} ${Tt-3}V${B+16}"/>`;
+  // detail T
+  const k2=1.5, dx=350, dy=108; const VD=view(dx-(P.XL-P.H2)*k2, dy+yc*k2, k2);
+  o+=txt(300,62,"DETAIL T · PIVOT EAR TAB (2:1)","lbl");
+  const pad=`M${VD.p(P.XL-P.H2-24,yc-27)}L${VD.p(P.W_LOW/2,yc-27)}L${VD.p(P.W_LOW/2,yc+27)}L${VD.p(P.XL-P.H2-24,yc+27)}Z`.replace(/,/g," ");
+  o+=`<clipPath id="cpT"><path d="${pad}"/></clipPath><g clip-path="url(#cpT)">${partSVG("LOWER_PLATE",VD)}</g><path class="thin" d="${pad}"/>`;
+  const [ex,ey]=VD.p(P.W_LOW/2,yc+27);o+=`<path class="vis" d="M${ex} ${ey}V${VD.p(0,yc-27)[1]}"/>`+txt(ex+1.2,VD.p(0,yc)[1],"plate edge","note");
+  const [tx]=VD.p(P.XL-P.H2-P.EAR_R,0),[bx2,by1]=VD.p(P.XL,yc-P.EAR_W/2),[,by2]=VD.p(P.XL,yc+P.EAR_W/2),[hx2,hy2]=VD.p(P.XL-P.H2,yc);
+  o+=dimH(tx,by2,bx2,by2,by2+7,`${fx(P.H2+P.EAR_R)}`)+dimH(hx2,hy2,bx2,by2,by2+13,`${fx(P.H2)}`)+dimV(bx2,by1,bx2,by2,ex+14,`${fx(P.EAR_W)}`);
+  o+=dimH(bx2,by1,ex,by1,by1-5,`${fx(P.W_LOW/2-P.XL)}`);
+  o+=leader(VD.p(P.XL-P.H2-P.EAR_R-0.75,yc-6)[0],VD.p(P.XL-P.H2-P.EAR_R-0.75,yc-6)[1],tx-5,by2+16,`U cut 1.5 W round tab`,"end");
+  {const [rx,ry]=VD.p(P.XL+P.REL_EXT-1,yc+P.EAR_W/2+0.75);o+=leader(rx,ry,rx-4,ry+22,`2× bend relief 2 W\n${fx(P.REL_EXT)} past bend line`,"end");}
+  {const [qx,qy]=VD.p(P.XL,yc+P.BSLOT/2-1);o+=leader(qx,qy,qx-14,by1-10,`bend slot 2 × ${fx(P.BSLOT)}\non bend line`,"end");}
+  // formed front view
+  const fy=206, V2=view(ox,fy,k,false);
+  o+=txt(28,fy-9,"FORMED · FRONT VIEW (ears bent 90° down)","lbl");
+  const w=P.W_LOW/2, eo=P.X_TEAR_OML, h=P.H2+P.EAR_R;
+  const rz=(x0,x1,z0,z1,st="")=>{const a=V2.p(x0,z0),b=V2.p(x1,z1);return `<rect class="vis" x="${Math.min(a[0],b[0])}" y="${Math.min(a[1],b[1])}" width="${Math.abs(b[0]-a[0])}" height="${Math.abs(b[1]-a[1])}" style="fill:#d9dee1;${st}"/>`;};
+  o+=rz(-w,w,0,P.T);[1,-1].forEach(sg=>{o+=rz(sg*eo,sg*(eo+P.T),P.T,h);const [px,py]=V2.p(sg*(eo+P.T/2),P.H2);o+=`<path class="hid" d="M${px-1.6} ${py-2.8}H${px+1.6}M${px-1.6} ${py+2.8}H${px+1.6}"/>`;});
+  o+=dimV(V2.p(eo+P.T,0)[0],V2.p(0,0)[1],V2.p(eo+P.T,P.H2)[0],V2.p(0,P.H2)[1],V2.p(w,0)[0]+8,`${fx(P.H2)}`);
+  o+=dimV(V2.p(eo+P.T,0)[0],V2.p(0,0)[1],V2.p(eo+P.T,h)[0],V2.p(0,h)[1],V2.p(w,0)[0]+16,`${fx(h)}`);
+  o+=dimH(V2.p(-eo-P.T,0)[0],V2.p(0,h)[1],V2.p(eo+P.T,0)[0],V2.p(0,h)[1],V2.p(0,h)[1]+6,`${fx(2*(eo+P.T))} over ear outer faces`);
+  o+=dimH(V2.p(eo+P.T,0)[0],V2.p(0,P.T)[1],V2.p(w,0)[0],V2.p(0,0)[1],fy-4,`${fx(w-eo-P.T)}`);
+  // bend table + notes
+  o+=txt(300,160,"BEND TABLE","noteh")+table(300,162,[{h:"BEND",w:11},{h:"DIR",w:13},{h:"ANG",w:10,a:"r"},{h:"Ri",w:7,a:"r"},{h:"BD",w:9,a:"r"},{h:"BEND LINE",w:52}],
+    [["B1","DOWN","90°",`${fx(P.RI)}`,`${fx(P.BD)}`,`X +${fx(P.XL)}, Y ${fx(yc-P.EAR_W/2)}–${fx(yc+P.EAR_W/2)}`],["B2","DOWN","90°",`${fx(P.RI)}`,`${fx(P.BD)}`,`X −${fx(P.XL)}, Y ${fx(yc-P.EAR_W/2)}–${fx(yc+P.EAR_W/2)}`]],4.3);
+  {const sz=(k,w,hh,r)=>k==="c"?`Ø${fx(w)}`:(2*r>=Math.min(w,hh)-0.01?`${fx(w)}×${fx(hh)} slot`:`${fx(w)}×${fx(hh)} R${fx(r)}`);
+   const rows=groups().map(gr=>{const p=gr.items[0];const tops=[...new Set(gr.items.map(i=>sz(i.k,i.w,i.h,i.r)))];const lows=[...new Set(gr.items.map(i=>sz(i.k,i.low[0],i.low[1],i.low[2])))];
+     return [p.g[0],tops.join(" / "),p.top?"ear opening":lows.join(" / "),gr.items.length];});
+   o+=txt(300,180,"HOLE SIZES · same centres as TS-02","noteh")+table(300,182,[{h:"TAG",w:9},{h:"TS-02 TOP",w:38,fs:2.4},{h:"TS-03 THIS PLATE",w:40,fs:2.4},{h:"QTY",w:9,a:"r"}],rows,3.7);}
+  o+=para(300,186+11*3.7+3,["Lower holes ≈8 % smaller (1–3 mm) so tools centre.",`Bend deduction ${fx(P.BD)} (1.5 mm, Ri 1.5): confirm with press shop.`,"Ear faces are friction faces: keep flat, file drips.","Relief edge strip 3.1 mm: bend gently, clamped."],"note",3.4);
+  return o;
+}
+function yAt(V,y){return V.p(0,y)[1];}
+function sheetBase(){
+  const k=0.68, ox=135, oy=150; const V=view(ox,oy,k);
+  let o=frame("04","BASE (DESK FOOT) + ARMS","PARTS 3 & 4","base 1:1.5 · arm 1:1","base 1 · arm 2","1.5 mm MS (CRCA)",4);
+  o+=txt(28,20,"BASE · FLAT PATTERN (ARMS 4 CUT IN PLACE)","lbl");
+  o+=partSVG("BASE",V);
+  const [L,B]=V.p(-P.BASE_W/2,0),[Rr,Tt]=V.p(P.BASE_W/2,P.BASE_D);
+  o+=dimH(L,Tt,Rr,Tt,Tt-8,`${fx(P.BASE_W)}`)+dimV(L,B,L,Tt,L-8,`${fx(P.BASE_D)}`);
+  const [hx,hy]=V.p(P.XB-P.H1,P.YB),[cx]=V.p(0,0);
+  o+=dimV(Rr,B,hx,hy,Rr+6,`${fx(P.YB)}`)+dimH(cx,B,hx,hy,B+6,`${fx(P.XB-P.H1)}`);
+  const arms=GEO.BASE.feats; // label arms
+  const [a1x,a1y]=V.p(-60,28),[a2x,a2y]=V.p(-60,66);
+  o+=dimV(L,B,a1x,a1y,L-3,"28")+dimV(L,B,a2x,a2y,L-14,"66");
+  o+=leader(V.p(-40,66+15)[0],V.p(-40,66+15)[1],V.p(-150,-26)[0],V.p(-150,-26)[1],"PART 4 ARM ×2 cut inside base\nopening = magnet strip pocket","start");
+  o+=balloon(4,V.p(70,28)[0],V.p(70,28)[1],V.p(100,-14)[0],V.p(100,-14)[1]);
+  o+=`<path class="cl" d="M${cx} ${Tt-3}V${B+3}"/>`;
+  // ear detail 2:1
+  const k2=1.6, dx=330, dy=125; const VD=view(dx-(P.XB-P.H1)*k2, dy+P.YB*k2, k2);
+  o+=txt(286,72,"DETAIL E · EAR TAB (2:1)","lbl");
+  const pad=`M${VD.p(P.XB-P.H1-22,P.YB-26)}L${VD.p(P.XB+12,P.YB-26)}L${VD.p(P.XB+12,P.YB+26)}L${VD.p(P.XB-P.H1-22,P.YB+26)}Z`.replace(/,/g," ");
+  o+=`<clipPath id="cpE"><path d="${pad}"/></clipPath><g clip-path="url(#cpE)">${partSVG("BASE",VD)}</g><path class="thin" d="${pad}"/>`;
+  const [bx,by1]=VD.p(P.XB,P.YB-P.EAR_W/2),[,by2]=VD.p(P.XB,P.YB+P.EAR_W/2),[tx]=VD.p(P.XB-P.H1-P.EAR_R,0),[hx2,hy2]=VD.p(P.XB-P.H1,P.YB);
+  o+=dimH(tx,by2,bx,by2,by2+8,`${fx(P.H1+P.EAR_R)}`);
+  o+=dimH(hx2,hy2,bx,by2,by2+14,`${fx(P.H1)}`);
+  o+=dimV(bx,by1,bx,by2,bx+9,`${fx(P.EAR_W)}`);
+  o+=leader(VD.p(P.XB-P.H1-P.EAR_R-0.75,P.YB+6)[0],VD.p(P.XB-P.H1-P.EAR_R-0.75,P.YB+6)[1],tx-6,by1-8,"U cut 1.5 W round tab","end");
+  {const [rx,ry]=VD.p(P.XB+P.REL_EXT_B-1,P.YB+P.EAR_W/2+0.75);o+=leader(rx,ry,rx+4,ry+14,`2× bend relief 2 W\n${fx(P.REL_EXT_B)} past bend line`);}
+  {const [qx,qy]=VD.p(P.XB,P.YB-P.BSLOT/2+1);o+=leader(qx,qy,qx-10,by2+22,`bend slot 2 × ${fx(P.BSLOT)}`,"end");}
+  o+=leader(hx2,hy2,hx2-2,by1-18,"Ø7 pivot","end");
+  // arm 1:1
+  const VA=view(60,214,1);
+  o+=txt(28,184,"PART 4 · ARM ×2 (1:1)","lbl");
+  o+=partSVG("ARM",VA);
+  const [a0x,a0y]=VA.p(0,0),[aex]=VA.p(P.L_ARM,0),[s0]=VA.p(P.SLOT[0],0),[s1]=VA.p(P.SLOT[1],0);
+  o+=dimH(VA.p(-15,0)[0],a0y,VA.p(P.L_ARM+15,0)[0],a0y,a0y+21,`${fx(P.L_ARM+P.ARM_W)}`);
+  o+=dimH(a0x,a0y,s0,a0y,a0y-19,`${fx(P.SLOT[0])}`)+dimH(a0x,a0y,s1,a0y,a0y-25,`${fx(P.SLOT[1])}`);
+  o+=dimV(aex+15,VA.p(0,-15)[1],aex+15,VA.p(0,15)[1],aex+22,`${fx(P.ARM_W)}`);
+  o+=dimH(a0x,a0y,aex,a0y,a0y+14,`${fx(P.L_ARM)} pivot c-c`);
+  o+=leader(a0x,a0y,a0x-6,a0y+15,"Ø7 base pivot","end")+leader((s0+s1)/2,a0y-3.3,(s0+s1)/2+20,a0y-14,`lightening slot ${fx(P.SLOT_W)} W (not a pivot)`);
+  {const [tx2,ty2]=VA.p(P.L_ARM,0);o+=leader(tx2,ty2+3.5,tx2+10,ty2+16,"Ø7 tray pivot");}
+  o+=txt(286,180,"BEND TABLE","noteh")+table(286,182,[{h:"BEND",w:11},{h:"DIR",w:11},{h:"ANG",w:10,a:"r"},{h:"Ri",w:7,a:"r"},{h:"BEND LINE",w:46}],
+    [["B1","UP","90°",`${fx(P.RI)}`,`X +${fx(P.XB)}, Y ${fx(P.YB-P.EAR_W/2)}–${fx(P.YB+P.EAR_W/2)}`],["B2","UP","90°",`${fx(P.RI)}`,`X −${fx(P.XB)}, Y ${fx(P.YB-P.EAR_W/2)}–${fx(P.YB+P.EAR_W/2)}`]],4.3);
+  o+=txt(286,200,"NOTES","noteh")+para(286,205,["1. Ears bend up in the tray-ear plane (x ±140.5–142);","    the arm bears directly on the ear face.","2. Arm outlines are the base openings:","    one cut each. Bend ears with parts removed.","3. Base 300 × 170, same outline as the plates.","4. Stick 1.5 mm rubber magnet strips into the","    openings, then an anti-slip sheet underneath."],"note",3.7);
+  return o;
+}
+function sheetNest(){
+  let o=frame("05","CUT LAYOUT & GENERAL NOTES","NEST","1:2.8","1 blank","1.5 mm MS (CRCA)",5);
+  const k=0.36, ox=105, oy=262; const V=view(ox,oy,k);
+  o+=txt(28,20,`NEST · ONE BLANK ${P.nest_blank} mm`,"lbl");
+  const nb=P.nest_blank.split(" x ").map(Number);
+  o+=`<rect class="thin" x="${ox-nb[0]/2*k}" y="${oy-nb[1]*k+2}" width="${nb[0]*k}" height="${nb[1]*k}" style="stroke-dasharray:2 1"/>`;
+  GEO.nest.forEach(n=>{const Vn=view(ox+(n.dx-GEO.nest[0].dx)*k,oy-n.dy*k,k);o+=partSVG(n.part,Vn);
+    const g=GEO[n.part];const b=g.blank.split(" x ").map(Number);
+    if(n.part!=="SPACER")o+=`<text class="lbl" x="${ox+(n.dx-GEO.nest[0].dx)*k}" y="${oy-n.dy*k-(n.part==="BASE"?b[1]*k*0.45:b[1]*k*0.5)}" text-anchor="middle" style="font-size:3px;fill:var(--tag)">${n.part.replace("_"," ")}</text>`;});
+  o+=dimH(ox-nb[0]/2*k,oy-nb[1]*k+2,ox+nb[0]/2*k,oy-nb[1]*k+2,oy-nb[1]*k-3,`${nb[0]}`)+dimV(ox+nb[0]/2*k,oy+2,ox+nb[0]/2*k,oy-nb[1]*k+2,ox+nb[0]/2*k+6,`${nb[1]}`);
+  const H=(y,t)=>txt(200,y,t,"noteh");
+  let y=24;
+  o+=H(y,"PROCESS ROUTE");y+=5;
+  o+=para(200,y,["1. Laser cut 1.5 mm low-Si CRCA (DXF TS-05). Arms drop out of base.","2. Deburr. Bend 4 ears on press brake (sheets 03, 04).","3. Hot-dip galvanise within days (ISO 1461 / IS 4759, ≥45 µm).","   Hang by standoff/pivot holes. Flatten plates while warm.","4. Re-drill 8 bolt holes Ø7; file drips off ear and arm faces.","5. Assemble per sheet 01. Set friction (below)."]);y+=6*3.9+3;
+  o+=H(y,"FRICTION JOINT (×4)");y+=5;
+  o+=para(200,y,["All 4: M6×20 · washer · ear · arm · washer · spring","washer · nyloc. Arm bears flat on the ear. All identical.","Tighten nyloc to ~3 N·m (≈2 kN clamp). Holds ≈5 N·m per joint","(µ 0.2 zinc-on-zinc, 2 slip faces, 7 mm mean radius).","Worst case needed at presets: 1.2 N·m per side.","Re-tighten after first week (zinc beds in)."]);y+=6*3.9+3;
+  o+=H(y,"STANDOFFS (×4)");y+=5;
+  o+=para(200,y,["Bolt M6×60 down through top plate, nut + washer under it,","then nut-washer / lower plate / washer-nut. Set 45 mm","face-to-face with a spacer block, lock nuts. Gap is adjustable."]);y+=3*3.9+3;
+  o+=H(y,"DESIGN LIMITS (CHECKED)");y+=5;
+  o+=para(200,y,["Tool shank below lower plate ≤130 mm at the 4 presets.",`Arm lean −15° to +45°, tilt 0–60°: ${GEO.rep.grid_ok} grid settings`,"keep 130 mm shanks clear and centre of gravity on the base.","Empty tray folds flat to 97 mm high (arm laid back)."]);
+  return o;
+}
+/* ---------- assembly (pose-driven) ---------- */
+function sheetAsm(){
+  let o=frame("01","GENERAL ASSEMBLY","ASSY","1:3 (0.34)","1 set","see BOM",1);
+  const {p1,p2,t,a,G}=pose();const ev=evaluate();
+  const k=0.34, ox=40, oy=168; const V=view(ox,oy,k);
+  o+=txt(28,20,`SIDE ELEVATION FROM RIGHT · arm lean ${state.alpha}° · tilt ${state.theta}°`,"lbl");
+  o+=`<clipPath id="cpSide"><rect x="21" y="24" width="135" height="160"/></clipPath><g clip-path="url(#cpSide)">`;
+  o+=`<path class="thin" d="M${ox-6} ${oy}H${ox+P.BASE_D*k+12}" style="stroke-dasharray:4 1"/>`;
+  o+=`<rect class="vis" x="${ox}" y="${oy}" width="${P.BASE_D*k}" height="${2*k}" style="fill:#d9dee1"/>`;
+  const ring=(r,map)=>r.map((q,i)=>{const [Y,Z]=map(q);const [x,y]=V.p(Y,Z);return (i?"L":"M")+x.toFixed(2)+" "+y.toFixed(2)}).join("")+"Z";
+  // base ear
+  o+=`<path class="solid" d="${ring(SOL.base_ear.ext,q=>q)}${SOL.base_ear.holes.map(h=>ring(h,q=>q)).join("")}"/>`;
+  // tray ear
+  const ear=q=>G(q[0],q[1]);
+  // arm
+  const armMap=q=>[p1[0]+q[0]*Math.sin(a)+q[1]*Math.cos(a), p1[1]+q[0]*Math.cos(a)-q[1]*Math.sin(a)];
+  // plates
+  const band=(h0)=>{const pts=[G(0,h0),G(P.D,h0),G(P.D,h0+2),G(0,h0+2)];return "M"+pts.map(q=>V.p(q[0],q[1]).join(" ")).join("L")+"Z";};
+  // tools phantom
+  const tl=[12,60,110,158].map(y=>{const top=G(y,-P.GAP-55),b=G(y,P.T),dn=[Math.sin(t)*state.shank,-Math.cos(t)*state.shank];
+    const tip=[b[0]+dn[0],b[1]+dn[1]];const bad=tip[1]<3;
+    return `<path class="tool${bad?" bad":""}" d="M${V.p(...top).join(" ")}L${V.p(...tip).join(" ")}"/>`+
+      `<path class="tool" d="M${V.p(...G(y,-P.GAP-55)).join(" ")}L${V.p(...G(y,-P.GAP-2)).join(" ")}" style="stroke-width:3.4;stroke:#c9cfd3;stroke-linecap:round"/>`;}).join("");
+  o+=tl;
+  o+=`<path class="solid" d="${band(-P.GAP)}"/><path class="solid" d="${band(0)}"/>`;
+  [P.SO[1],P.D-P.SO[1]].forEach(y=>{const A=V.p(...G(y,-P.GAP+2)),Bq=V.p(...G(y,0));o+=`<path class="vis" d="M${A.join(" ")}L${Bq.join(" ")}" style="stroke-width:1.4;stroke:#6c757b"/>`;});
+  o+=`<path class="solid" style="fill:#cfd6db" d="${ring(SOL.arm.ext,armMap)}${SOL.arm.holes.map(h=>ring(h,armMap)).join("")}"/>`;
+  o+=`<path class="solid" style="fill:#e3e7ea" d="${ring(SOL.lower_ear.ext,ear)}${SOL.lower_ear.holes.map(h=>ring(h,ear)).join("")}"/>`;
+  [p1,p2].forEach(q=>{const [x,y]=V.p(...q);o+=`<circle cx="${x}" cy="${y}" r="${10*k}" class="vis" style="fill:#fff"/><circle cx="${x}" cy="${y}" r="${3*k}" class="vis" style="fill:#555"/>`});
+  o+=`</g>`;
+  // dims
+  const fr=G(0,-P.GAP);const [fx_,fy_]=V.p(...fr);
+  o+=dimV(fx_,fy_,V.p(fr[0],0)[0],oy,ox-10+Math.min(0,fx_-ox),`${f1(ev.frontH)} desk → front edge`);
+  o+=dimH(ox,oy,ox+P.BASE_D*k,oy,oy+10,`${fx(P.BASE_D)}`);
+  const [p1x,p1y]=V.p(...p1);o+=dimH(ox,oy,p1x,p1y,oy+5.5,`${fx(P.YB)}`);
+  // tilt annotation
+  const ra=G(P.D,0),la=G(0,0);const [rx,ry]=V.p(...ra);
+  o+=`<path class="cl" d="M${V.p(...la).join(" ")}H${rx+10}"/>`+txt(rx+11,V.p(...la)[1]+1,`${state.theta}° tilt`,"note");
+  // balloons
+  const bpos=(q)=>V.p(...q);
+  const tpC=bpos(G(P.D*0.8,-P.GAP)), lpC=bpos(G(P.D*0.75,1)), beC=bpos([P.YB,P.H1+14]), arC=bpos(armMap([P.s0||state.s*0.45,0])), soC=bpos(G(P.SO[1],-P.GAP/2));
+  o+=balloon(1,...tpC,tpC[0]+22,tpC[1]-12)+balloon(2,...lpC,lpC[0]+30,lpC[1]+2)+balloon(3,ox+P.BASE_D*k*0.85,oy+0.5,ox+P.BASE_D*k*0.85+6,oy-12);
+  o+=balloon(4,...arC,arC[0]+30,arC[1]+6)+balloon(5,...soC,soC[0]-18,soC[1]-10);
+  const p2c=bpos(p2);o+=balloon(8,...p2c,p2c[0]+26,p2c[1]+14);const p1c=bpos(p1);o+=balloon(8,...p1c,p1c[0]-14,p1c[1]-16);
+  // front elevation
+  const kf=0.34, fox=230, foy=168; const VF=view(fox,foy,kf);
+  o+=txt(160,20,"FRONT ELEVATION","lbl");
+  o+=`<rect class="vis" x="${fox-P.BASE_W/2*kf}" y="${foy}" width="${P.BASE_W*kf}" height="${2*kf}" style="fill:#d9dee1"/>`;
+  const zr=(h)=>{const zs=[G(0,h)[1],G(P.D,h)[1],G(0,h+2)[1],G(P.D,h+2)[1]];return [Math.min(...zs),Math.max(...zs)];};
+  const rectZ=(x0,x1,z0,z1,cls="solid",st="")=>{const a=VF.p(x0,z1),b=VF.p(x1,z0);return `<rect class="${cls}" x="${a[0]}" y="${a[1]}" width="${b[0]-a[0]}" height="${b[1]-a[1]}" style="${st}"/>`;};
+  const [t0,t1]=zr(-P.GAP),[l0,l1]=zr(0);
+  o+=rectZ(-P.W_TOP/2,P.W_TOP/2,t0,t1)+rectZ(-P.W_LOW/2,P.W_LOW/2,l0,l1);
+  const lowEarZ=SOL.lower_ear.ext.map(q=>G(q[0],q[1])[1]);
+  const armPts=SOL.arm.ext.map(q=>armMap(q)[1]);
+  [1,-1].forEach(s=>{
+    const eo=P.X_TEAR_OML;
+    o+=rectZ(s>0?eo:-eo-P.T,s>0?eo+P.T:-eo,Math.min(...lowEarZ),l1,"solid","fill:#e3e7ea");
+    o+=rectZ(s>0?P.X_ARM_IN:-P.X_ARM_IN-P.T,s>0?P.X_ARM_IN+P.T:-P.X_ARM_IN,Math.min(...armPts),Math.max(...armPts),"solid","fill:#cfd6db");
+    o+=rectZ(s>0?eo:-eo-P.T,s>0?eo+P.T:-eo,0,P.H1+P.EAR_R,"solid");
+    [P.SO[1],P.D-P.SO[1]].forEach(y=>{const z0=G(y,0)[1],z1=G(y,-P.GAP+2)[1];o+=rectZ(s*P.SO[0]-3,s*P.SO[0]+3,Math.min(z0,z1),Math.max(z0,z1),"thin","fill:#c3cacf")});
+  });
+  o+=`<path class="cl" d="M${fox} ${foy+6}V${VF.p(0,Math.max(t1,180))[1]-8}"/>`;
+  o+=dimH(fox-P.BASE_W/2*kf,foy,fox+P.BASE_W/2*kf,foy,foy+8,`${fx(P.BASE_W)}`)+dimH(VF.p(-P.W_TOP/2,0)[0],VF.p(0,t1)[1],VF.p(P.W_TOP/2,0)[0],VF.p(0,t1)[1],VF.p(0,t1)[1]-5,`${fx(P.W_TOP)}`);
+  // iso snapshot
+  o+=`<image id="isoImg" x="318" y="16" width="90" height="68" preserveAspectRatio="xMidYMid meet" href="${isoURL||""}"/>`+txt(363,88,"ISOMETRIC (current setting)","note","middle");
+  // friction joint detail
+  o+=jointDetail(318,100);
+  // BOM
+  const bom=[["1","Top plate","TS-02","1"],["2","Lower plate","TS-03","1"],["3","Base (desk foot)","TS-04","1"],["4","Arm (cut from base)","TS-04","2"],
+    ["5","Hex bolt M6×60 8.8 Zn","ISO 4017","4"],["6","Hex nut M6","ISO 4032","12"],["7","Washer M6 (12 OD)","ISO 7089","24"],
+    ["8","Hex bolt M6×20 8.8 Zn (joints)","ISO 4017","4"],["9","Spring washer M6","DIN 127","4"],["10","Nyloc nut M6","ISO 7040","4"],
+    ["11","Rubber magnet strip 30×150×1.5","adhesive","2"],["12","Anti-slip sheet 300×170","adhesive","1"]];
+  o+=txt(24,186,"BILL OF MATERIALS","noteh")+table(24,188,[{h:"ITEM",w:9},{h:"DESCRIPTION",w:46},{h:"REF / STD",w:17},{h:"QTY",w:8,a:"r"}],bom,3.6);
+  const pr=Object.entries(GEO.presets).map(([n,v])=>[n,`${v[0]}°`,`${v[2]}°`]);
+  o+=txt(112,190,"TESTED SETTINGS (130 mm shanks)","noteh")+table(112,192,[{h:"PRESET",w:26},{h:"ARM LEAN",w:16,a:"r"},{h:"TILT",w:14,a:"r"}],pr,3.6);
+  o+=txt(112,216,"ASSEMBLY","noteh")+para(112,221,["1. Fit standoffs 5 to plates 1 + 2, set 45 mm gap.","2. Bolt arms 4 to base ears: joint J.","3. Bolt tray ears to arm top holes: joint J.","4. All 4 joints identical. Tighten","    nylocs until the tray holds but moves by hand.","5. Fit magnet strips 11 and anti-slip sheet 12."],"note",3.6);
+  o+=txt(186,190,"KEY CLEARANCES (x, from centre)","noteh")+para(186,195,["Tray + base ears      140.5–142","Arm                   142–143.5","Plate + base edges    150","A-slot tools          ≤140.5"],"note num",3.6);
+  return o;
+}
+function jointDetail(x,y){
+  let o=txt(x,y,"DETAIL J · FRICTION JOINT (×4, identical)","lbl");
+  const cy=y+30, s=2.6; let cx=x+2; let jd=0;
+  const plate=(w,h,fill,label)=>{let r=`<rect x="${cx}" y="${cy-h/2}" width="${w}" height="${h}" class="vis" style="fill:${fill}"/>`;
+    if(label){r+=`<line class="thin" x1="${cx+w/2}" y1="${cy+(jd%2?-1:1)*h/2}" x2="${cx+w/2}" y2="${cy+(jd%2?-1:1)*20}"/><text class="note" x="${cx+w/2}" y="${cy+(jd%2?-21.5:23)}" text-anchor="middle" style="font-size:2.4px">${label}</text>`;jd++;}
+    cx+=w;return r;};
+  o+=plate(4*s/2,18,"#b9c0c4","head")+plate(1.6*s,12,"#e1e5e8","washer")+plate(2*s,26,"#e3e7ea","ear");
+  o+=plate(2*s,32,"#cfd6db","arm")+plate(1.6*s,12,"#e1e5e8","washer")+plate(1.5*s,12,"#c3cacf","spring")+plate(5*s/1.6,18,"#b9c0c4","nyloc");
+  o+=`<rect x="${x+2}" y="${cy-3}" width="${cx-x}" height="6" class="hid"/>`+`<path class="cl" d="M${x} ${cy}H${cx+4}"/>`;
+  o+=para(x,cy+32,["Bolt M6×20 at all 4 joints. The arm sits flat","on the ear, 6 mm inside the plate edge. Fixed","tray pivot: arm has no slot travel."],"note",3.4);
+  return o;
+}
+const SHEETS=[
+  {id:"s3d",no:"3D",name:"3D model",fn:null},
+  {id:"s01",no:"01",name:"Assembly",fn:sheetAsm},
+  {id:"s02",no:"02",name:"Top plate",fn:sheetTop},
+  {id:"s03",no:"03",name:"Lower plate",fn:sheetLower},
+  {id:"s04",no:"04",name:"Base + arms",fn:sheetBase},
+  {id:"s05",no:"05",name:"Cut layout + notes",fn:sheetNest},
+];
+let isoURL="";
+
+/* ---------------- sheet viewer with pan / zoom ---------------- */
+const viewEl=document.getElementById("view");
+let vb={x:0,y:0,w:420,h:297}, svgEl=null;
+function renderSheet(){
+  const sh=SHEETS.find(s=>s.id===state.sheet);
+  if(!sh.fn)return;
+  let body;try{body=sh.fn();}catch(e){body=`<rect class="paper" width="420" height="297"/><text x="30" y="40" class="lbl">Could not draw this sheet: ${e.message}</text>`;console.error(e);}
+  const cls=["sheet",!document.getElementById("lDims").checked&&"hide-dims",!document.getElementById("lTags").checked&&"hide-tags",!document.getElementById("lCl").checked&&"hide-cl"].filter(Boolean).join(" ");
+  viewEl.innerHTML=`<svg class="${cls}" xmlns="http://www.w3.org/2000/svg" viewBox="${vb.x} ${vb.y} ${vb.w} ${vb.h}" role="img" aria-label="${sh.name} drawing">${body}</svg>`;
+  svgEl=viewEl.firstChild;
+}
+function applyVB(){if(svgEl)svgEl.setAttribute("viewBox",`${vb.x} ${vb.y} ${vb.w} ${vb.h}`);}
+function zoomAt(f,cx,cy){const nw=Math.min(420,Math.max(25,vb.w*f));const r=nw/vb.w;
+  vb.x=cx-(cx-vb.x)*r;vb.y=cy-(cy-vb.y)*r;vb.w=nw;vb.h=nw*297/420;applyVB();}
+function toSheet(ev){const r=viewEl.getBoundingClientRect();return [vb.x+(ev.clientX-r.left)/r.width*vb.w, vb.y+(ev.clientY-r.top)/r.height*vb.h];}
+viewEl.addEventListener("wheel",e=>{e.preventDefault();const [x,y]=toSheet(e);zoomAt(e.deltaY>0?1.15:1/1.15,x,y);},{passive:false});
+const ptrs=new Map();let pinch0=null;
+viewEl.addEventListener("pointerdown",e=>{viewEl.setPointerCapture(e.pointerId);ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});viewEl.classList.add("dragging");
+  if(ptrs.size===2){const [a,b]=[...ptrs.values()];pinch0={d:Math.hypot(a.x-b.x,a.y-b.y),w:vb.w};}});
+viewEl.addEventListener("pointermove",e=>{if(!ptrs.has(e.pointerId))return;const prev=ptrs.get(e.pointerId);const r=viewEl.getBoundingClientRect();
+  if(ptrs.size===1){vb.x-=(e.clientX-prev.x)/r.width*vb.w;vb.y-=(e.clientY-prev.y)/r.height*vb.h;applyVB();}
+  ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(ptrs.size===2&&pinch0){const [a,b]=[...ptrs.values()];const d=Math.hypot(a.x-b.x,a.y-b.y);const mid={clientX:(a.x+b.x)/2,clientY:(a.y+b.y)/2};
+    const [cx,cy]=toSheet(mid);zoomAt((pinch0.w*pinch0.d/d)/vb.w,cx,cy);}});
+const endP=e=>{ptrs.delete(e.pointerId);if(ptrs.size<2)pinch0=null;if(!ptrs.size)viewEl.classList.remove("dragging");};
+viewEl.addEventListener("pointerup",endP);viewEl.addEventListener("pointercancel",endP);
+document.getElementById("zin").onclick=()=>zoomAt(1/1.4,vb.x+vb.w/2,vb.y+vb.h/2);
+document.getElementById("zout").onclick=()=>zoomAt(1.4,vb.x+vb.w/2,vb.y+vb.h/2);
+document.getElementById("zfit").onclick=()=>{vb={x:0,y:0,w:420,h:297};applyVB();};
+["lDims","lTags","lCl"].forEach(id=>document.getElementById(id).addEventListener("change",renderSheet));
+
+/* ---------------- tabs ---------------- */
+const tabsEl=document.getElementById("tabs");
+SHEETS.forEach(s=>{const b=document.createElement("button");b.type="button";b.role="tab";b.id="tab-"+s.id;b.innerHTML=`<span class="no">${s.no}</span>${s.name}`;
+  b.onclick=()=>select(s.id);tabsEl.appendChild(b);});
+function select(id){state.sheet=id;try{localStorage.setItem("ts-sheet",id)}catch(e){}
+  SHEETS.forEach(s=>document.getElementById("tab-"+s.id).setAttribute("aria-selected",s.id===id));
+  const is3d=id==="s3d";
+  document.getElementById("view").hidden=is3d;document.getElementById("v3d").hidden=!is3d;
+  document.getElementById("sheetTools").hidden=is3d;document.getElementById("v3dTools").hidden=!is3d;
+  const sh=SHEETS.find(s=>s.id===id);
+  document.getElementById("stageTitle").textContent=is3d?"3D model · drag to orbit, scroll to zoom":`Sheet ${sh.no} · ${sh.name}`;
+  document.getElementById("hint").textContent=is3d?"Sliders on the right move the arm and tray. Red tool shanks mean a tool would hit the desk.":"Scroll or pinch to zoom, drag to pan. The DXF governs all cut geometry; do not scale prints.";
+  if(is3d){resize3d();}else{vb={x:0,y:0,w:420,h:297};renderSheet();}
+}
+
+/* ---------------- controls + checks ---------------- */
+const sl={sAlpha:"alpha",sS:"s",sTh:"theta",sSh:"shank"};
+function syncInputs(){for(const id in sl){document.getElementById(id).value=state[sl[id]];}
+  document.getElementById("oAlpha").textContent=`${state.alpha}°`;document.getElementById("oS").textContent=`${state.s} mm`;
+  document.getElementById("oTh").textContent=`${state.theta}°`;document.getElementById("oSh").textContent=`${state.shank} mm`;}
+for(const id in sl){document.getElementById(id).addEventListener("input",e=>{state[sl[id]]=+e.target.value;update();});}
+const presetEl=document.getElementById("presets");
+Object.entries(GEO.presets).forEach(([n,v])=>{const b=document.createElement("button");b.className="btn";b.type="button";b.textContent=n;
+  b.onclick=()=>{[state.alpha,state.s,state.theta]=v;update();};presetEl.appendChild(b);});
+function renderChecks(){const e=evaluate();const rows=[
+  [e.tip>=5,"Tool shanks clear the desk",`lowest tip ${f1(e.tip)} mm above desk`],
+  [e.plateLow>5,"Tray clears the base",`lowest plate edge ${f1(e.plateLow)} mm`],
+  [e.cg>20&&e.cg<P.BASE_D-20,"Stable on the desk",`centre of gravity ${f1(e.cg)} mm from front (base 0–${P.BASE_D})`],
+  [Math.max(e.tP1,e.tP2)<FRICTION_CAP/2,"Friction joints hold",`needs ${f1(e.tP1)} / ${f1(e.tP2)} N·m per side (base / tray) vs ≈${FRICTION_CAP} N·m grip`]];
+  document.getElementById("checks").innerHTML=rows.map(r=>`<div class="chk"><span class="pill ${r[0]?"ok":"bad"}">${r[0]?"OK":"NO"}</span><span>${r[1]}</span><span class="v">${r[2]}</span></div>`).join("")+
+  `<p class="small">Front edge of top plate ${f1(e.frontH)} mm above the desk. Tray + tools taken as ${f1(e.mt)} kg.</p>`;}
+let isoTimer=null;
+function update(){syncInputs();renderChecks();if(three)poseThree();
+  if(state.sheet==="s01")renderSheet();
+  clearTimeout(isoTimer);isoTimer=setTimeout(snapIso,250);}
+const cs=document.getElementById("cutsum");
+(function(){const parts=[["Top plate",GEO.TOP_PLATE],["Lower plate",GEO.LOWER_PLATE],["Base (incl. arms + discs)",GEO.BASE]];
+  let cut=0,pc=0,kgs=2*GEO.ARM.kg;parts.forEach(([n,g])=>{const q=1;cut+=g.cut_m*q;pc+=g.pierces*q;kgs+=g.kg*q;});
+  cs.innerHTML=`<dt>Blank</dt><dd>${P.nest_blank} mm</dd><dt>Cut length</dt><dd>${f1(cut)} m</dd><dt>Pierces</dt><dd>${pc}</dd><dt>Steel in parts</dt><dd>${kgs.toFixed(2)} kg</dd><dt>Tool slots</dt><dd>${GEO.pattern.length}</dd><dt>Bends</dt><dd>4 × 90°</dd>`;})();
+
+/* ---------------- three.js model ---------------- */
+let three=null;
+function shapeFrom(sol){const s=new THREE.Shape(sol.ext.map(q=>new THREE.Vector2(q[0],q[1])));
+  sol.holes.forEach(h=>s.holes.push(new THREE.Path(h.map(q=>new THREE.Vector2(q[0],q[1])))));return s;}
+function extrude(sol,mat){const g=new THREE.ExtrudeGeometry(shapeFrom(sol),{depth:P.T,bevelEnabled:false,curveSegments:4});return new THREE.Mesh(g,mat);}
+function init3d(){
+  if(typeof THREE==="undefined"){document.getElementById("v3d").innerHTML='<p style="padding:20px">The 3D viewer could not load its library. The drawing sheets still work.</p>';return;}
+  const el=document.getElementById("v3d");
+  const renderer=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true,alpha:true});renderer.setClearColor(0x000000,0);renderer.setPixelRatio(Math.min(2,devicePixelRatio));
+  renderer.shadowMap.enabled=true;el.appendChild(renderer.domElement);
+  const scene=new THREE.Scene();
+  const cam=new THREE.PerspectiveCamera(32,1.6,10,5000);
+  const ctl=new THREE.OrbitControls(cam,renderer.domElement);ctl.target.set(0,120,0);ctl.enableDamping=true;
+  scene.add(new THREE.HemisphereLight(0xffffff,0x9a8f84,0.95));
+  const sun=new THREE.DirectionalLight(0xffffff,0.85);sun.position.set(300,600,450);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.bias=-0.0008;sun.shadow.normalBias=0.6;
+  Object.assign(sun.shadow.camera,{left:-400,right:400,top:400,bottom:-400,near:100,far:1600});scene.add(sun);
+  const desk=new THREE.Mesh(new THREE.PlaneGeometry(1400,1000),new THREE.MeshStandardMaterial({color:0xb98e62,roughness:.9}));
+  desk.rotation.x=-Math.PI/2;desk.position.y=-2.05;desk.receiveShadow=true;scene.add(desk);
+  const zinc=new THREE.MeshStandardMaterial({color:0xc9cfd3,metalness:.18,roughness:.5,side:THREE.DoubleSide});
+  const zinc2=new THREE.MeshStandardMaterial({color:0xb3bbc1,metalness:.2,roughness:.45,side:THREE.DoubleSide});
+  const steel=new THREE.MeshStandardMaterial({color:0x8a9298,metalness:.3,roughness:.4});
+  const mag=new THREE.MeshStandardMaterial({color:0x222426,roughness:.8});
+  const cast=m=>{m.castShadow=true;m.receiveShadow=true;return m;};
+  // base
+  const base=new THREE.Group();scene.add(base);
+  const bm=cast(extrude(SOL.base,zinc));bm.rotation.x=-Math.PI/2;bm.position.set(0,-P.T,P.BASE_D/2);base.add(bm);
+  [28,66].forEach(y=>{const m=new THREE.Mesh(new THREE.BoxGeometry(P.L_ARM+P.ARM_W-1,1.5,P.ARM_W-1),mag);m.position.set(0,-1.2,P.BASE_D/2-y);base.add(m);});
+  [1,-1].forEach(s=>{const e=cast(extrude(SOL.base_ear,zinc));e.rotation.y=Math.PI/2;e.position.set(s>0?P.X_TEAR_OML:-P.X_TEAR_OML-P.T,0,P.BASE_D/2);base.add(e);
+});
+  // arms
+  const arms=[1,-1].map(s=>{const g=new THREE.Group();const m=cast(extrude(SOL.arm,zinc2));m.rotation.y=Math.PI/2;m.position.x=s>0?P.X_ARM_IN:-P.X_ARM_IN-P.T;g.add(m);scene.add(g);return g;});
+  // tray
+  const tray=new THREE.Group();scene.add(tray);
+  const lp=cast(extrude(SOL.lower,zinc));lp.rotation.x=-Math.PI/2;lp.position.set(0,P.H2-P.T,yc);tray.add(lp);
+  const tp=cast(extrude(SOL.top,zinc));tp.rotation.x=-Math.PI/2;tp.position.set(0,P.H2+P.GAP-P.T,yc);tray.add(tp);
+  const topGroup=new THREE.Group();tray.add(topGroup);topGroup.add(tp);
+  [1,-1].forEach(s=>{const e=cast(extrude(SOL.lower_ear,zinc));e.rotation.y=Math.PI/2;e.scale.y=-1;e.position.set(s>0?P.X_TEAR_OML:-P.X_TEAR_OML-P.T,P.H2,yc);tray.add(e);
+});
+  const sos=[];
+  [1,-1].forEach(sx=>[P.SO[1],P.D-P.SO[1]].forEach(y=>{const g=new THREE.Group();
+    const rod=new THREE.Mesh(new THREE.CylinderGeometry(3,3,P.GAP+14,12),steel);rod.position.y=P.H2+P.GAP/2-2;g.add(rod);
+    [P.H2-P.T-2.5,P.H2+2.5,P.H2+P.GAP-P.T-2.5,P.H2+P.GAP+2].forEach(h=>{const n=new THREE.Mesh(new THREE.CylinderGeometry(5.6,5.6,4.6,6),steel);n.position.y=h;g.add(n);});
+    g.position.set(sx*P.SO[0],0,-(y-yc));cast(g);tray.add(g);sos.push(g);}));
+  // bolts
+  const boltGeo=new THREE.CylinderGeometry(3,3,16,12),washer=new THREE.CylinderGeometry(10,10,1.6,24);
+  const mkBolt=(len=16)=>{const g=new THREE.Group();const b=new THREE.Mesh(new THREE.CylinderGeometry(3,3,len,12),steel);b.rotation.z=Math.PI/2;g.add(b);
+    [-len/2+2.5,len/2-2.5].forEach(x=>{const w=new THREE.Mesh(washer,steel);w.rotation.z=Math.PI/2;w.position.x=x;g.add(w);});scene.add(g);return g;};
+  const bolts={p1:[mkBolt(18),mkBolt(18)],p2:[mkBolt(18),mkBolt(18)]};
+  // sample tools: handles above, shanks below (shank length follows slider)
+  const tools=new THREE.Group();tray.add(tools);
+  const handleCols=[0xd0302a,0x1d1f21,0xd0302a,0x1d1f21,0xe0b020];
+  const toolPts=GEO.pattern.filter(p=>p.k==="c"&&"LMN".includes(p.g[0])).filter((p,i)=>i%2===0);
+  const shankMeshes=[];
+  toolPts.forEach((p,i)=>{const hr={L:14,M:11,N:8}[p.g[0]], hl={L:95,M:80,N:65}[p.g[0]];
+    const h=new THREE.Mesh(new THREE.CylinderGeometry(hr*0.85,hr,hl,16),new THREE.MeshStandardMaterial({color:handleCols[i%5],roughness:.5}));
+    h.position.set(p.x,P.H2+P.GAP+hl/2,-(p.y-yc));cast(h);tools.add(h);
+    const sm=new THREE.Mesh(new THREE.CylinderGeometry(Math.min(3,p.w/2-1),Math.min(3,p.w/2-1),1,10),steel.clone());sm.userData={x:p.x,y:p.y};tools.add(sm);shankMeshes.push(sm);});
+  three={renderer,scene,cam,ctl,el,arms,tray,bolts,tools,shankMeshes,topGroup,sos};
+  setCam("iso");
+  new ResizeObserver(resize3d).observe(el);
+  poseThree();resize3d();
+  (function loop(){requestAnimationFrame(loop);if(!el.hidden){ctl.update();renderer.render(scene,cam);}})();
+  // offscreen renderer for the assembly sheet isometric
+  three.iso=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true,alpha:false});three.iso.setSize(900,680);three.iso.setPixelRatio(1);three.iso.shadowMap.enabled=true;
+  three.isoCam=new THREE.PerspectiveCamera(24,900/680,10,5000);
+  snapIso();
+}
+function setCam(v){if(!three)return;const t=three.ctl.target;t.set(0,130,0);
+  const p={iso:[520,420,620],side:[900,140,0],front:[0,160,900]}[v];three.cam.position.set(...p);three.ctl.update();}
+function resize3d(){if(!three)return;const r=three.el.getBoundingClientRect();if(!r.width)return;three.renderer.setSize(r.width,r.height,false);three.cam.aspect=r.width/r.height;three.cam.updateProjectionMatrix();}
+function poseThree(){const {p1,p2,a,t,G}=pose();const W=(Y,Z)=>[Y,Z];
+  const toZ=Y=>P.BASE_D/2-Y;
+  three.arms.forEach(g=>{g.position.set(0,p1[1],toZ(p1[0]));g.rotation.set(Math.PI/2-a,0,0);});
+  three.tray.position.set(0,p2[1],toZ(p2[0]));three.tray.rotation.set(t,0,0);
+  const ex=document.getElementById("tExplode").checked;
+  three.topGroup.position.y=ex?60:0;three.sos.forEach(s=>s.position.y=ex?30:0);
+  three.bolts.p1.forEach((b,i)=>b.position.set((i?-1:1)*(P.X_ARM_IN),p1[1],toZ(p1[0])));
+  three.bolts.p2.forEach((b,i)=>{b.position.set((i?-1:1)*(P.X_ARM_IN),p2[1],toZ(p2[0]));b.scale.set(1,1,1);});
+  three.tools.visible=document.getElementById("tTools").checked;
+  three.shankMeshes.forEach(m=>{const L=state.shank+P.T;m.scale.y=L;m.position.set(m.userData.x,P.H2-L/2+P.T-P.T,-(m.userData.y-yc));
+    const tip=G(m.userData.y,P.T)[1]-state.shank*Math.cos(t);m.material.color.setHex(tip<3?0xd32f2f:0x6f777d);});
+}
+function snapIso(){if(!three||!three.iso)return;const c=three.isoCam;c.position.set(560,430,640);c.lookAt(0,120,0);
+  const bg=three.scene.background;three.scene.background=new THREE.Color(0xffffff);const desk=three.scene.children.find(o=>o.geometry&&o.geometry.type==="PlaneGeometry");if(desk)desk.visible=false;
+  three.iso.render(three.scene,c);isoURL=three.iso.domElement.toDataURL("image/png");three.scene.background=bg;if(desk)desk.visible=true;
+  const im=document.getElementById("isoImg");if(im)im.setAttribute("href",isoURL);}
+document.getElementById("vIso").onclick=()=>setCam("iso");document.getElementById("vSide").onclick=()=>setCam("side");document.getElementById("vFront").onclick=()=>setCam("front");
+["tTools","tExplode"].forEach(id=>document.getElementById(id).addEventListener("change",()=>three&&poseThree()));
+
+/* ---------------- boot ---------------- */
+[state.alpha,state.s,state.theta]=Object.values(GEO.presets)[1];
+syncInputs();renderChecks();
+let start="s3d";try{start=localStorage.getItem("ts-sheet")||"s3d"}catch(e){}
+const hash=location.hash.replace("#","");if(SHEETS.some(s=>s.id===hash))start=hash;
+init3d();select(start);
+</script>
