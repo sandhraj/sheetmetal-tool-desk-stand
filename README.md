@@ -11,6 +11,8 @@ The design aims at low cost:
 ![3D model](images/model_3d.png)
 
 **Interactive drawing set:** open [`docs/index.html`](docs/index.html), or the GitHub Pages site if enabled. It contains:
+
+**Live viewer:** https://sandhraj.github.io/sheetmetal-tool-desk-stand/
 - a live 3D model with arm-lean and tilt sliders and pass/fail checks;
 - five A3 shop-drawing sheets (assembly, top plate, lower plate, base + arms, cut layout) with pan/zoom and layer toggles.
 
